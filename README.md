@@ -60,6 +60,14 @@ The server will start on the port defined in your `.env` file (default: `3000`).
 
 ---
 
+## 🔗 Frontend Repository
+
+This backend works with the frontend located at:
+
+👉 [Famous Quotes — Frontend](https://github.com/zackaryoconnor/Famous-Quotes)
+
+---
+
 ## 👥 Team
 
 - [Conor Wantuch](https://github.com/Cwan7)
