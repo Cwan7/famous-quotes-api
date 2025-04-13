@@ -32,7 +32,6 @@ It supports full CRUD functionality for quotes and includes user authentication 
 3. Create a `.env` file in the root directory:
    ```env
    PORT=3000
-   NODE_ENV=development
    MONGODB_URI="your_mongodb_connection_string"
    SESSION_SECRET="your_session_secret"
    ```
