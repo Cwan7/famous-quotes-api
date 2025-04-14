@@ -7,6 +7,8 @@ const mongoose = require("mongoose");
 const Quote = require("./models/quotes.js");
 const User = require("./models/user.js");
 const cors = require("cors");
+const bcrypt = require("bcrypt");
+
 const PORT = process.env.PORT || 3000;
 
 // ----------------------------------------------------[[ Connect to DB first]]----------------------------
@@ -17,9 +19,11 @@ mongoose.connection.on("connected", () => {
 });
 
 // ----------------------------------------------------[[ Setup ]]---------------------------------------
+app.use(express.urlencoded({ extended: true })); // this parsees form data
+app.use(express.json());
 app.use(cors());
 
-app.use(express.json());
+
 
 // SESSIONS
 app.use(
@@ -30,6 +34,11 @@ app.use(
     cookie: { secure: false }, // Set to `true` if using HTTPS
   })
 );
+
+// TEST
+app.get("/ping", async (req, res) => {
+  res.json({message: "Pong!"})
+});
 
 // .POST creating a new quote in the database/API
 app.post("/quotes", async (req, res) => {
@@ -42,7 +51,7 @@ app.get("/quotes", async (req, res) => {
   const findQuote = await Quote.find();
   res.json(findQuote);
 });
-
+// .GET a single quote
 app.get("/quote/:quoteId", async (req, res) => {
   const findQuote = await Quote.find({_id: req.params.quoteId});
   res.json(findQuote);
@@ -62,6 +71,73 @@ app.put("/quote/:quoteId", async (req, res) => {
     { new: true }
   );
   req.json(updateQuote);
+});
+
+// AUTH
+app.post("/auth/register", async (req, res) => { // Login
+  const {username, password} = (req.body || {});
+  const userFound = await User.findOne({ username });
+  const errors = [];
+
+  // Do validations here making sure username and password was provided in the request
+  if (!username) {
+    errors.push(`"Username" not provided!`)
+  }
+  if (!password) {
+    errors.push(`"Password" not provided!`)
+  }
+
+  // Check if there's any errors
+  if (errors.length > 0) {
+    return res.status(401).json({message: "Unable to register. Check error", error: errors.join(",")})
+  }
+
+
+  if (!userFound) {
+    const new_user_hashed_password = await bcrypt.hash(password, 5);
+    const newUser = await User.create({username, password_hash: new_user_hashed_password})
+
+    return res.json({message: "User sucessfully registered!", registeredUser: newUser});
+  } else {
+    return res.status(401).json({error: "User already exists"});
+  }
+});
+
+app.post("/auth/login", async (req, res) => { // Login
+  const {username, password} = (req.body || {});
+  const userFound = await User.findOne({ username });
+
+  if (userFound) {
+    const user_hashed_password = userFound.password_hash;
+    const passwordMatches = await bcrypt.compare(password, user_hashed_password);
+    
+    // If the password the user inputs matches with the stored/saved password
+    if (passwordMatches) {
+      const userSession = { id: userFound._id, username: userFound.username };
+
+      req.session.user = userSession // Save user in session
+      return res.json({message: "User sucessfully logged in!", session: userSession})
+    } else {
+      return res.status(401).json({error: "Invalid credentails"});
+    }
+  } else {
+    return res.status(401).json({error: "User not found"});
+  }
+});
+
+app.post("/auth/logout", async (req, res) => { // Log out
+  req.session.destroy(); // destroy session
+  return res.json({message: "User sucessfully logged out!"})
+});
+
+app.get("/auth/session", async (req, res) => { // Login
+  const user_session = req.session.user;
+
+  if (user_session) {
+    res.status(201).json({message: "session found!", session: user_session});
+  } else {
+    res.status(201).json({message: "session not found! :(", session: undefined});
+  }
 });
 
 app.listen(PORT, () => {
