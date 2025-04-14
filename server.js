@@ -5,6 +5,7 @@ const app = express();
 const session = require("express-session");
 const mongoose = require("mongoose");
 const Quote = require("./models/quotes.js");
+const User = require("./models/user.js");
 const cors = require("cors");
 const PORT = process.env.PORT || 3000;
 
@@ -42,10 +43,15 @@ app.get("/quotes", async (req, res) => {
   res.json(findQuote);
 });
 
+app.get("/quote/:quoteId", async (req, res) => {
+  const findQuote = await Quote.find({_id: req.params.quoteId});
+  res.json(findQuote);
+});
+
 //.DELETE route to delete quote data from database.
 app.delete("/quote/:quoteId", async (req, res) => {
   const deleteQuote = await Quote.findByIdAndDelete(req.params.quoteId);
-  req.json(deleteQuote);
+  res.json(deleteQuote);
 });
 
 //.PUT route for updating quote in  the database
