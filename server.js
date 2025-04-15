@@ -21,7 +21,12 @@ mongoose.connection.on("connected", () => {
 // ----------------------------------------------------[[ Setup ]]---------------------------------------
 app.use(express.urlencoded({ extended: true })); // this parsees form data
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:5173', // The frontend URL (NEEDED for sessions to properly work)
+  credentials: true, // Allow credentials
+  methods: ['GET', 'POST', 'PUT', 'DELETE'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
 
 
 
