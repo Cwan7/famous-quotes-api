@@ -19,26 +19,31 @@ mongoose.connection.on("connected", () => {
 });
 
 // ----------------------------------------------------[[ Setup ]]---------------------------------------
-app.use(express.urlencoded({ extended: true })); // this parsees form data
-app.use(express.json());
+// SESSIONS
 app.use(cors({
   origin: 'http://localhost:5173', // The frontend URL (NEEDED for sessions to properly work)
   credentials: true, // Allow credentials
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
-
-
-
-// SESSIONS
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "General_Assembly_Bootcamp",
     resave: false,
-    saveUninitialized: true, // Ensures session object is initialized
-    cookie: { secure: false }, // Set to `true` if using HTTPS
+    saveUninitialized: false, // When its true it ensures session object is initialized
+    cookie: { 
+      secure: false, // Set to `true` if using HTTPS
+      sameSite: 'lax', // 'lax' is for HTTP development
+      httpOnly: true, // this prevents JavaScript from accessing cookies
+      maxAge: 24 * 60 * 60 * 1000 // Set cookie expiration (e.g., 1 day)
+    }, 
   })
 );
+app.use(express.json());
+app.use(express.urlencoded({ extended: true })); // this parses form data
+
+
+
 
 // TEST
 app.get("/ping", async (req, res) => {
@@ -121,7 +126,8 @@ app.post("/auth/login", async (req, res) => { // Login
       const userSession = { id: userFound._id, username: userFound.username };
 
       req.session.user = userSession // Save user in session
-      return res.json({message: "User sucessfully logged in!", session: userSession})
+
+      return res.json({message: "User successfully logged in!", session: userSession});
     } else {
       return res.status(401).json({error: "Invalid credentails"});
     }
