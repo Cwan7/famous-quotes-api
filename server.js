@@ -75,12 +75,12 @@ app.delete("/quote/:quoteId", async (req, res) => {
 
 //.PUT route for updating quote in  the database
 app.put("/quote/:quoteId", async (req, res) => {
-  const updateQuote = await Quote.findByIdAndUpdate(
+  const updatedQuote = await Quote.findByIdAndUpdate(
     req.params.quoteId,
     req.body,
     { new: true }
   );
-  req.json(updateQuote);
+  res.json({updatedQuote});
 });
 
 // AUTH
