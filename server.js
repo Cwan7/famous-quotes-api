@@ -21,7 +21,7 @@ mongoose.connection.on("connected", () => {
 // ----------------------------------------------------[[ Setup ]]---------------------------------------
 // SESSIONS
 app.use(cors({
-  origin: 'http://localhost:5173', // The frontend URL (NEEDED for sessions to properly work)
+  origin: (process.env.frontend_url || 'http://localhost:5173'), // The frontend URL (NEEDED for sessions to properly work)
   credentials: true, // Allow credentials
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
