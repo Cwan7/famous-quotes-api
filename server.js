@@ -11,6 +11,7 @@ const bcrypt = require("bcrypt");
 
 const PORT = process.env.PORT || 3000;
 
+
 // ----------------------------------------------------[[ Connect to DB first]]----------------------------
 mongoose.connect(process.env.MONGODB_URI);
 
@@ -20,6 +21,7 @@ mongoose.connection.on("connected", () => {
 
 // ----------------------------------------------------[[ Setup ]]---------------------------------------
 // SESSIONS
+console.log(process.env.frontend_url);
 app.use(cors({
   origin: (process.env.frontend_url || 'http://localhost:5173'), // The frontend URL (NEEDED for sessions to properly work)
   credentials: true, // Allow credentials
