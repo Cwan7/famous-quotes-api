@@ -23,7 +23,7 @@ mongoose.connection.on("connected", () => {
 // SESSIONS
 console.log(process.env.frontend_url);
 app.use(cors({
-  origin: true, // Allow all origins
+  origin: '*',  // Allow all origins
   credentials: true, // Allow credentials
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
