@@ -20,14 +20,18 @@ mongoose.connection.on("connected", () => {
 });
 
 // ----------------------------------------------------[[ Setup ]]---------------------------------------
-// SESSIONS
-console.log(process.env.frontend_url);
-app.use(cors({
-  origin: '*',  // Allow all origins
-  credentials: true, // Allow credentials
+const allowedOrigins = [
+  ...(process.env.ALLOWED_ORIGINS?.split(',') || []),
+  "http://localhost:3000",
+];
+
+app.use(cors({ // SESSIONS
+  origin: allowedOrigins,
+  credentials: true, // This is needed for authentication to work
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "General_Assembly_Bootcamp",
@@ -44,9 +48,7 @@ app.use(
 app.use(express.json());
 app.use(express.urlencoded({ extended: true })); // this parses form data
 
-
-
-
+// ----------------------------------------------------[[ Routes ]]---------------------------------------
 // TEST
 app.get("/ping", async (req, res) => {
   res.json({message: "Pong!"})
@@ -153,6 +155,7 @@ app.get("/auth/session", async (req, res) => { // Login
   }
 });
 
+// ----------------------------------------------------[[ Start server ]]---------------------------------------
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
