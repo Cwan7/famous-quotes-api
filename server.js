@@ -23,15 +23,17 @@ mongoose.connection.on("connected", () => {
 const allowedOrigins = [
   ...(process.env.ALLOWED_ORIGINS?.split(',') || []),
   "http://localhost:3000",
+  "http://localhost:5173",
 ];
 
-app.use(cors({ // SESSIONS
+app.use(cors({
   origin: allowedOrigins,
-  credentials: true, // This is needed for authentication to work
+  credentials: true, // This is needed for authentication to work (cookies)
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
+// SESSIONS
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "General_Assembly_Bootcamp",
@@ -39,7 +41,7 @@ app.use(
     saveUninitialized: false, // When its true it ensures session object is initialized
     cookie: { 
       secure: false, // Set to `true` if using HTTPS
-      sameSite: 'lax', // 'lax' is for HTTP development
+      sameSite: 'lax', // 'lax' is allowing for cookies from external sites
       httpOnly: true, // this prevents JavaScript from accessing cookies
       maxAge: 24 * 60 * 60 * 1000 // Set cookie expiration (e.g., 1 day)
     }, 
@@ -71,12 +73,6 @@ app.get("/quote/:quoteId", async (req, res) => {
   res.json(findQuote);
 });
 
-//.DELETE route to delete quote data from database.
-app.delete("/quote/:quoteId", async (req, res) => {
-  const deleteQuote = await Quote.findByIdAndDelete(req.params.quoteId);
-  res.json(deleteQuote);
-});
-
 //.PUT route for updating quote in  the database
 app.put("/quote/:quoteId", async (req, res) => {
   const updatedQuote = await Quote.findByIdAndUpdate(
@@ -87,56 +83,130 @@ app.put("/quote/:quoteId", async (req, res) => {
   res.json({updatedQuote});
 });
 
+//.DELETE route to delete quote data from database.
+app.delete("/quote/:quoteId", async (req, res) => {
+  const deleteQuote = await Quote.findByIdAndDelete(req.params.quoteId);
+  res.json(deleteQuote);
+});
+
 // AUTH
-app.post("/auth/register", async (req, res) => { // Login
-  const {username, password} = (req.body || {});
-  const userFound = await User.findOne({ username });
+app.post("/auth/register", async (req, res) => { // Register
+  const { username, password } = req.body || {};
   const errors = [];
 
   // Do validations here making sure username and password was provided in the request
   if (!username) {
-    errors.push(`"Username" not provided!`)
+    errors.push(`"Username" not provided!`);
   }
   if (!password) {
-    errors.push(`"Password" not provided!`)
+    errors.push(`"Password" not provided!`);
   }
 
   // Check if there's any errors
   if (errors.length > 0) {
-    return res.status(401).json({message: "Unable to register. Check error", error: errors.join(",")})
+    return res
+      .status(401)
+      .json({
+        message: "Unable to register. Check error",
+        error: errors.join(","),
+      });
   }
 
+  // Try to find a user by their username, case-insensitively
+  const userFound = await User.findOne({
+    username: username, // Search for the exact username
+  })
+    // Apply case-insensitive search using collation
+    .collation({
+      locale: "en", // Use English language rules for the comparison
+      strength: 2, // Ignore case differences (e.g., 'abc' == 'ABC')
+    });
 
   if (!userFound) {
     const new_user_hashed_password = await bcrypt.hash(password, 5);
-    const newUser = await User.create({username, password_hash: new_user_hashed_password})
+    const newUser = await User.create({
+      username,
+      password_hash: new_user_hashed_password,
+    });
 
-    return res.json({message: "User sucessfully registered!", registeredUser: newUser});
+    return res.json({
+      message: "User sucessfully registered!",
+      registeredUser: newUser,
+    });
   } else {
-    return res.status(401).json({error: "User already exists"});
+    return res
+      .status(401)
+      .json({
+        message: "Unable to register. Check error",
+        error: "User already exists",
+      });
   }
 });
 
-app.post("/auth/login", async (req, res) => { // Login
-  const {username, password} = (req.body || {});
-  const userFound = await User.findOne({ username });
+app.post("/auth/login", async (req, res) => {// Login
+  const { username, password } = req.body || {};
+  const errors = [];
+
+  // Do validations here making sure username and password was provided in the request
+  if (!username) {
+    errors.push(`"Username" not provided!`);
+  }
+  if (!password) {
+    errors.push(`"Password" not provided!`);
+  }
+
+  // Check if there's any errors
+  if (errors.length > 0) {
+    return res
+      .status(401)
+      .json({
+        message: "Unable to login. Check error",
+        error: errors.join(","),
+      });
+  }
+
+  // Try to find a user by their username, case-insensitively
+  const userFound = await User.findOne({
+    username: username, // Search for the exact username
+  })
+    // Apply case-insensitive search using collation
+    .collation({
+      locale: "en", // Use English language rules for the comparison
+      strength: 2, // Ignore case differences (e.g., 'abc' == 'ABC')
+    });
 
   if (userFound) {
     const user_hashed_password = userFound.password_hash;
-    const passwordMatches = await bcrypt.compare(password, user_hashed_password);
-    
+    const passwordMatches = await bcrypt.compare(
+      password,
+      user_hashed_password
+    );
+
     // If the password the user inputs matches with the stored/saved password
     if (passwordMatches) {
       const userSession = { id: userFound._id, username: userFound.username };
 
-      req.session.user = userSession // Save user in session
+      req.session.user = userSession; // Save user in session
 
-      return res.json({message: "User successfully logged in!", session: userSession});
+      return res.json({
+        message: "User successfully logged in!",
+        session: userSession,
+      });
     } else {
-      return res.status(401).json({error: "Invalid credentails"});
+      return res
+        .status(401)
+        .json({
+          message: "Unable to login. Check error",
+          error: "Invalid credentails",
+        });
     }
   } else {
-    return res.status(401).json({error: "User not found"});
+    return res
+      .status(401)
+      .json({
+        message: "Unable to login. Check error",
+        error: "User not found",
+      });
   }
 });
 
