@@ -28,7 +28,7 @@ It supports full CRUD functionality for quotes and includes user authentication 
    ```
 4. Start the server:
    ```bash
-   npm run dev
+   node server.js
    ```
 The server will start on the port defined in your `.env` file (default: `3000`).
 ---
